@@ -9,8 +9,9 @@ const cachedURLs = [
   'https://cdn.jsdelivr.net/npm/chart.js@2.8.0'
 ]
 
-let cachedReqs = [];
-let nullResponse = new Response(new ReadableStream( new Uint8Array([])), { status: 404 });
+function JSONResponse(data) {
+  return new Response(new Blob([JSON.stringify(data)], {type : 'application/json'}), { status: 302 })
+}
 
 // initialization
 self.addEventListener('install', function (event) {
@@ -23,23 +24,42 @@ self.addEventListener('install', function (event) {
   )
 })
 
+// Function for adding entries to local DB
+function addToLocalDB(obj) {
+  const req = indexedDB.open("budget_db", 1);
+  req.onsuccess = () => { 
+    const transaction = req.result.transaction(["transactions"], "readwrite");
+    const res = transaction.objectStore("transactions").put(
+      { _id:obj._id, name:obj.name, value:obj.value, date:obj.date });
+    res.onsuccess = function() { return this.result }
+    res.onerror = function() { return null }
+  };
+}
+
 // function for retrieving data from DB
 async function retrieveLocalDB() {
   console.log("attempting local DB retrieval...");
-  const req = indexedDB.open("budget_db", 1);
-  req.onsuccess = () => {
-    // create transaction event with readwrite permissions
-    const transaction = req.result.transaction(["transactions"], "readwrite");
-    // create request grabbing all values from objectstore
-    const allDataReq = transaction.objectStore("transactions").getAll();
-    // handle successful request
-    allDataReq.onsuccess = function() { 
-      console.log("local DB found:", this.result);
+
+  let data = await new Promise((resolve,reject) => {
+    const req = indexedDB.open("budget_db", 1);
+    req.onsuccess = () => {
+      // create transaction event with readwrite permissions
+      const transaction = req.result.transaction(["transactions"], "readwrite");
+      // create request grabbing all values from objectstore
+      const allDataReq = transaction.objectStore("transactions").getAll();
+      // handle successful request
+      allDataReq.onsuccess = function() { 
+        console.log("local DB found:", this.result); 
+        resolve(this.result);
+      }
+      allDataReq.onerror = function() { 
+        console.log("local DB error:", this.error); 
+        reject(this.error) 
+      }
     }
-    allDataReq.onerror = function(err) { 
-      console.log(err) 
-    }
-  }
+  })
+
+  return data.reverse();
 }
 
 // handle fetch requests offline
@@ -51,9 +71,9 @@ self.addEventListener('fetch', event => {
     if (event.request.url.includes("/api/transaction") && event.request.method === "GET") {
       event.respondWith(fetch(event.request)
         .then(res => { return res })
-        .catch(err => { 
-          retrieveLocalDB();
-          return nullResponse; 
+        .catch(async err => { 
+          let returnedData = await retrieveLocalDB();
+          return JSONResponse(returnedData);
         })
       )
     }
@@ -62,7 +82,7 @@ self.addEventListener('fetch', event => {
       console.log("POST transaction data", event.request);
       event.respondWith(fetch(event.request)
         .then(res => { return res })
-        .catch(err => { return nullResponse })
+        .catch(err => { return JSONResponse(null) })
       )
     }
   }
