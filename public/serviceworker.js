@@ -5,6 +5,8 @@ const cachedURLs = [
   '/styles.css',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
+  'https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css',
+  'https://cdn.jsdelivr.net/npm/chart.js@2.8.0'
 ]
 
 let cachedReqs = [];
@@ -21,6 +23,25 @@ self.addEventListener('install', function (event) {
   )
 })
 
+// function for retrieving data from DB
+async function retrieveLocalDB() {
+  console.log("attempting local DB retrieval...");
+  const req = indexedDB.open("budget_db", 1);
+  req.onsuccess = () => {
+    // create transaction event with readwrite permissions
+    const transaction = req.result.transaction(["transactions"], "readwrite");
+    // create request grabbing all values from objectstore
+    const allDataReq = transaction.objectStore("transactions").getAll();
+    // handle successful request
+    allDataReq.onsuccess = function() { 
+      console.log("local DB found:", this.result);
+    }
+    allDataReq.onerror = function(err) { 
+      console.log(err) 
+    }
+  }
+}
+
 // handle fetch requests offline
 self.addEventListener('fetch', event => {
 
@@ -30,7 +51,10 @@ self.addEventListener('fetch', event => {
     if (event.request.url.includes("/api/transaction") && event.request.method === "GET") {
       event.respondWith(fetch(event.request)
         .then(res => { return res })
-        .catch(err => { return nullResponse })
+        .catch(err => { 
+          retrieveLocalDB();
+          return nullResponse; 
+        })
       )
     }
     // POST transactions data

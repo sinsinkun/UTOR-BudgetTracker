@@ -12,18 +12,15 @@ request.onupgradeneeded = ({ target }) => {
   objectStore.createIndex("date", "date");
 };
 
-// Function for adding entries to DB
-function addToDB(obj) {
+// Function for adding entries to local DB
+function addToLocalDB(obj) {
   const req = indexedDB.open("budget_db", 1);
   req.onsuccess = () => { 
-    console.log("accessing indexed DB")
     const transaction = req.result.transaction(["transactions"], "readwrite");
-    const pendingReq = transaction.objectStore("transactions").put(
+    const res = transaction.objectStore("transactions").put(
       { _id:obj._id, name:obj.name, value:obj.value, date:obj.date });
-    
-    // console log result or error
-    pendingReq.onsuccess = function() { console.log(this.result) }
-    pendingReq.onerror = function() { console.log(this.error) }
+    res.onsuccess = function() { return this.result }
+    res.onerror = function() { return null }
   };
 }
 
@@ -43,8 +40,8 @@ fetch("/api/transaction").then(response => { return response.json() })
 .then(data => {
   // save db data on global variable
   transactions = data;
-  // save db data on indexedDB
-  transactions.forEach(entry => addToDB(entry));
+  // save db data to indexedDB
+  transactions.forEach(entry => addToLocalDB(entry));
   // print to UI
   populateTotal();
   populateTable();
