@@ -1,6 +1,32 @@
 let transactions = [];
 let myChart;
 
+// Open request for indexed DB
+const request = indexedDB.open("budget_db", 1);
+// Create table if necessary
+request.onupgradeneeded = ({ target }) => {
+  const db = target.result;
+  const objectStore = db.createObjectStore("transactions", {keyPath: "_id"});
+  objectStore.createIndex("name", "name");
+  objectStore.createIndex("value", "value");
+  objectStore.createIndex("date", "date");
+};
+
+// Function for adding entries to DB
+function addToDB(obj) {
+  const req = indexedDB.open("budget_db", 1);
+  req.onsuccess = () => { 
+    console.log("accessing indexed DB")
+    const transaction = req.result.transaction(["transactions"], "readwrite");
+    const pendingReq = transaction.objectStore("transactions").put(
+      { _id:obj._id, name:obj.name, value:obj.value, date:obj.date });
+    
+    // console log result or error
+    pendingReq.onsuccess = function() { console.log(this.result) }
+    pendingReq.onerror = function() { console.log(this.error) }
+  };
+}
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
     navigator.serviceWorker.register('/serviceworker.js').then(function(registration) {
@@ -13,18 +39,17 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-fetch("/api/transaction")
-  .then(response => {
-    return response.json();
-  })
-  .then(data => {
-    // save db data on global variable
-    transactions = data;
-
-    populateTotal();
-    populateTable();
-    populateChart();
-  });
+fetch("/api/transaction").then(response => { return response.json() })
+.then(data => {
+  // save db data on global variable
+  transactions = data;
+  // save db data on indexedDB
+  transactions.forEach(entry => addToDB(entry));
+  // print to UI
+  populateTotal();
+  populateTable();
+  populateChart();
+});
 
 function populateTotal() {
   // reduce transaction amounts to a single total value
@@ -43,10 +68,7 @@ function populateTable() {
   transactions.forEach(transaction => {
     // create and populate a table row
     let tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${transaction.name}</td>
-      <td>${transaction.value}</td>
-    `;
+    tr.innerHTML =  `<td>${transaction.name}</td><td>${transaction.value}</td>`;
 
     tbody.appendChild(tr);
   });
@@ -148,7 +170,7 @@ function sendTransaction(isAdding) {
   })
   .catch(err => {
     // fetch failed, so save in indexed db
-    saveRecord(transaction);
+    // saveRecord(transaction);
 
     // clear form
     nameEl.value = "";
@@ -156,10 +178,5 @@ function sendTransaction(isAdding) {
   });
 }
 
-document.querySelector("#add-btn").onclick = function() {
-  sendTransaction(true);
-};
-
-document.querySelector("#sub-btn").onclick = function() {
-  sendTransaction(false);
-};
+document.querySelector("#add-btn").onclick = function() { sendTransaction(true) };
+document.querySelector("#sub-btn").onclick = function() { sendTransaction(false) };
