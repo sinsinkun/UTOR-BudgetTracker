@@ -39,6 +39,7 @@ request.onupgradeneeded = ({ target }) => {
   objStore2.createIndex("date", "date");
 };
 
+// Function for clearing transactions DB
 async function clearLocalDB() {
   // clear transactions db
   let response = await new Promise((resolve,reject) => {
@@ -54,6 +55,7 @@ async function clearLocalDB() {
   return response;
 }
 
+// Function for clearing unsaved DB
 async function clearUnsavedDB() {
   // clear unsaved db
   let response = await new Promise((resolve,reject) => {
@@ -141,6 +143,11 @@ async function retrieveUnsavedDB() {
   return data.reverse();
 }
 
+// on reload
+self.addEventListener('activate', event => {
+  console.log('activate event triggered');
+});
+
 // handle fetch requests offline
 self.addEventListener('fetch', async event => {
 
@@ -168,12 +175,14 @@ self.addEventListener('fetch', async event => {
   else if (event.request.url.includes("/api/transaction") && event.request.method === "POST") {
     let reqClone = event.request.clone();
     event.respondWith(fetch(event.request)
-      .then(res => { return res })
+      .then(res => { 
+        return res 
+      })
       .catch(async err => { 
         console.log("POST transaction error:", err);
         const body = await reqClone.json();
         console.log(body);
-        // save data to local DB
+        // save data to unsaved DB
         addToUnsaved(body);
         return JSONResponse({ errors:"could not connect to DB" }); 
       })

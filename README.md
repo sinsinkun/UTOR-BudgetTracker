@@ -1,33 +1,28 @@
+[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
+
 # Unit 18 PWA Homework: Online/Offline Budget Trackers
 
-Add functionality to our existing Budget Tracker application to allow for offline access and functionality.
+## Description
+This is an app that can be used to track transactions, while allowing offline functionality.
 
-The user will be able to add expenses and deposits to their budget with or without a connection. When entering transactions offline, they should populate the total when brought back online.
+This app is deployed on heroku at [https://jcx-budgettracker.herokuapp.com/](https://jcx-budgettracker.herokuapp.com/)
 
-Offline Functionality:
-  * Enter deposits offline
-  * Enter expenses offline
+## Table of Contents
+* [Installation](#installation)
+* [Usage](#usage)
+* [License](#license)
 
-When brought back online:
-  * Offline entries should be added to tracker.
+## Installation
+This app can be installed locally by downloading the repo, and requires an existing local MongoDB database server. After downloading the repo, run 'npm install' to install the required packages.
 
-## User Story
-AS AN avid traveller
-I WANT to be able to track my withdrawals and deposits with or without a data/internet connection
-SO THAT my account balance is accurate when I am traveling
+![Screenshot](./screenshot.png)
 
-## Business Context
+## Usage
+Run "node server" to start a local instance of the app.
 
-Giving users a fast and easy way to track their money is important, but allowing them to access that information anytime is even more important. Having offline functionality is paramount to our applications success.
+## License
+ISC License: Copyright (C) 2021 JingChang Xiao 
 
+Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies. 
 
-## Acceptance Criteria
-GIVEN a user is on Budget App without an internet connection
-WHEN the user inputs a withdrawal or deposit
-THEN that will be shown on the page, and added to their transaction history when their connection is back online.
-
-## Submission on BCS
-
-* You are required to submit the following:
-  * the URL to the deployed application
-  * the URL to the Github repository
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
