@@ -1,34 +1,20 @@
 let transactions = [];
 let myChart;
 
-// Open request for indexed DB
-const request = indexedDB.open("budget_db", 1);
-// Create table if necessary
-request.onupgradeneeded = ({ target }) => {
-  const db = target.result;
-  const objectStore = db.createObjectStore("transactions", {keyPath: "_id"});
-  objectStore.createIndex("name", "name");
-  objectStore.createIndex("value", "value");
-  objectStore.createIndex("date", "date");
-};
-
-// Function for adding entries to local DB
-function addToLocalDB(obj) {
-  const req = indexedDB.open("budget_db", 1);
-  req.onsuccess = () => { 
-    const transaction = req.result.transaction(["transactions"], "readwrite");
-    const res = transaction.objectStore("transactions").put(
-      { _id:obj._id, name:obj.name, value:obj.value, date:obj.date });
-    res.onsuccess = function() { return this.result }
-    res.onerror = function() { return null }
-  };
-}
-
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
     navigator.serviceWorker.register('/serviceworker.js').then(function(registration) {
-      // Registration was successful
-      console.log('ServiceWorker registration successful with scope: ', registration.scope);
+      if (registration.installing) {
+        const sw = registration.installing || registration.waiting;
+        sw.onstatechange = function() {
+          if (sw.state === "installed") {
+            // Registration was successful
+            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            window.location.reload();
+          }
+        }
+      }
+      else if (registration.active) console.log("ServiceWorker already installed");
     }, function(err) {
       // registration failed
       console.log('ServiceWorker registration failed: ', err);
@@ -40,8 +26,6 @@ fetch("/api/transaction").then(response => { return response.json() })
 .then(data => {
   // save db data on global variable
   transactions = data;
-  // save db data to indexedDB
-  transactions.forEach(entry => addToLocalDB(entry));
   // print to UI
   populateTotal();
   populateTable();
@@ -166,8 +150,8 @@ function sendTransaction(isAdding) {
     }
   })
   .catch(err => {
-    // fetch failed, so save in indexed db
-    // saveRecord(transaction);
+    // fetch failed
+    console.log(err);
 
     // clear form
     nameEl.value = "";
